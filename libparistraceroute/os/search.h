@@ -3,6 +3,7 @@
 
 #include "os.h"
 
+#  include <search.h>
 #ifdef LINUX
 #  include <search.h>
 #endif

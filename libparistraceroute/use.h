@@ -6,7 +6,7 @@
 
 // Enable IPv4 and IPv6 support
 #define USE_IPV4
-#define USE_IPV6
+#undef USE_IPV6
 
 // Enable bit-level fields and non-aligned fields management
 #define USE_BITS

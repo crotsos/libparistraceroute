@@ -3,6 +3,20 @@
 
 #include "../os.h"
 
+#include "lwip/prot/tcp.h"
+
+
+#define tcphdr tcp_hdr
+#  define SRC_PORT    src
+#  define DST_PORT    dest
+#  define SEQ_NUM     seqno
+#  define ACK_NUM     ackno
+#  define DATA_OFFSET _hdrlen_rsvd_flags
+#  define WINDOW_SIZE wnd
+#  define CHECKSUM    chksum
+#  define URGENT_PTR  urgp
+
+
 #ifdef LINUX
 #  include <netinet/tcp.h>
 #  define SRC_PORT    source

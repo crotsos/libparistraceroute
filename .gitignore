@@ -64,7 +64,7 @@ config.sub
 configure
 depcomp
 install-sh
-libparistraceroute/config.h
+# libparistraceroute/config.h
 libparistraceroute/stamp-h1
 libparistraceroute/config.h.in
 libtool

@@ -3,6 +3,13 @@
 
 #include "../os.h"
 
+#  include "lwip/prot/udp.h"
+#define udphdr udp_hdr
+#  define SRC_PORT src
+#  define DST_PORT dest
+#  define LENGTH   len
+#  define CHECKSUM chksum
+
 #ifdef LINUX
 #  include <netinet/udp.h>
 #  define SRC_PORT source

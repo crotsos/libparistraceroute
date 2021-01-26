@@ -1,8 +1,8 @@
 /**
  * bound.c
  * Author: Thomas Delacour
- * Description: Implementation of error bounding as described in 
- * the May 2007 Paris Traceroute workshop and April 2009 Infocom papers. 
+ * Description: Implementation of error bounding as described in
+ * the May 2007 Paris Traceroute workshop and April 2009 Infocom papers.
  * Detailed explanation can be found at www.paris-traceroute.net/publications.
  */
 
@@ -27,7 +27,7 @@
 static bound_state_t * bound_state_create(size_t max_interfaces)
 {
     bound_state_t * state;
-    
+
     if (!(state = malloc(sizeof(bound_state_t)))) {
         goto ERR_STATE_MALLOC;
     }
@@ -51,7 +51,7 @@ static bound_state_t * bound_state_create(size_t max_interfaces)
         return NULL;
 }
 
-static void bound_state_free(bound_state_t * bound_state) 
+static void bound_state_free(bound_state_t * bound_state)
 {
     if (bound_state) {
         if (bound_state->first)  free(bound_state->first);
@@ -78,16 +78,16 @@ static void bound_state_free(bound_state_t * bound_state)
  */
 
 inline static bool continue_condition(
-    size_t        jstart, 
-    size_t        hypothesis, 
-    long double   cur_state, 
+    size_t        jstart,
+    size_t        hypothesis,
+    long double   cur_state,
     bound_t     * bound
 ) {
 
     bool        ret = true;
     size_t      i;
     long double pr_sum = 0.0;
-    
+
     if (jstart == hypothesis - 1) {
         for (i = 0; i <= jstart; ++i) {
             pr_sum += bound->pk_table[i];
@@ -120,7 +120,7 @@ inline static void swap(bound_state_t * bound_state) {
 }
 
 /**
- * \brief For each new hypothesis' state space, initialize dummy "first" 
+ * \brief For each new hypothesis' state space, initialize dummy "first"
  * vector to all with probability_t 0.0 and initialize second vector
  * with probability 1.0 at first reachable  state - state(1,1)
  */
@@ -139,7 +139,7 @@ static probability_t init_state(bound_t * bound, bound_state_t * bound_state) {
 }
 
 /**
- * \brief Calculate confidence required at each branching point given 
+ * \brief Calculate confidence required at each branching point given
  * graph-wide confidence and max assumed branching points
  */
 
@@ -147,13 +147,13 @@ static double node_confidence(double graph_confidence, size_t max_branch)
 {
     double ret;
     double power = 1.0 / max_branch;
-    
-    ret = pow((1 - graph_confidence), power); 
+
+    ret = pow((1 - graph_confidence), power);
     return 1 - ret;
-} 
+}
 
 /**
- * \brief Reallocate memory in bound structure given new Hypothesis 
+ * \brief Reallocate memory in bound structure given new Hypothesis
  * range (Param new_max_n)
  */
 
@@ -163,13 +163,13 @@ static bool reallocate_bound(bound_t * bound, size_t new_max_n)
 
     // Reallocate state space memory
     if (!(bound_state->first = realloc(
-                       bound_state->first, 
+                       bound_state->first,
                        (new_max_n * sizeof(probability_t))
                        ))){
         goto ERR_REALLOC;
     }
     if (!(bound_state->second = realloc(
-                       bound_state->second, 
+                       bound_state->second,
                        (new_max_n * sizeof(probability_t))
                        ))){
         goto ERR_REALLOC;
@@ -181,7 +181,7 @@ static bool reallocate_bound(bound_t * bound, size_t new_max_n)
                  ((new_max_n + 1) * sizeof(size_t))
                  ))){
         goto ERR_REALLOC;
-    } 
+    }
     if (!(bound->pk_table = realloc(
                  bound->pk_table,
                  ((new_max_n + 1) * sizeof(probability_t))
@@ -226,7 +226,7 @@ bound_t * bound_create(double confidence, size_t max_interfaces, size_t max_bran
 
     if (!(bound->pr_failure = calloc((max_interfaces + 1), sizeof(probability_t)))) {
         goto ERR_PR_FAILURE;
-    }   
+    }
 
     if (!(bound->state = bound_state_create(max_interfaces))) {
         goto ERR_STATE;
@@ -277,13 +277,13 @@ void bound_build(bound_t * bound, size_t end)
     for ( ; hypothesis <= bound->max_n; ++hypothesis) {
         cur_state = init_state(bound, state);
         jstart = 2;
-        
+
         // Walk horizontally accross state space
         for (i = 1; continue_condition(jstart, hypothesis, cur_state, bound); ++i) {
 
             // Compute values and fill vector (vertically)
             for (j = jstart; j < hypothesis; ++j) {
-                cur_state = calculate(state, hypothesis, j); 
+                cur_state = calculate(state, hypothesis, j);
 
                 // If at a previously computed stopping point, enter
                 // unreachable state (probability 0). Add probability of
@@ -326,11 +326,11 @@ void bound_failure_dump(bound_t * bound)
 
     printf("Expected failure:\n");
     for (i = 0; i <= bound->max_n; ++i) {
-        printf("%zu - %Lf\n", i, bound->pr_failure[i]);    
+        printf("%zu - %Lf\n", i, bound->pr_failure[i]);
     }
 }
 
-void bound_dump(bound_t * bound) 
+void bound_dump(bound_t * bound)
 {
     size_t i;
 
@@ -350,6 +350,7 @@ void bound_free(bound_t * bound)
     }
 }
 
+#if 0
 int main(int argc, const char * argv[]) {
     long double confidence;
     size_t      interfaces;
@@ -366,4 +367,4 @@ int main(int argc, const char * argv[]) {
     bound_free(bound);
     return 0;
 }
-
+#endif

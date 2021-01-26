@@ -7,16 +7,17 @@
 #  include <netinet/ip.h>
 #endif
 
-#ifdef FREEBSD
+// #ifdef FREEBSD
 #  include <sys/types.h>    // u_char, u_int*_t
 #  include "in.h"           // struct in_addr
-#  include <netinet/ip.h>
+// #  include <netinet/ip.h>
 
     // "struct iphdr" does not exist under FreeBSD.
     // This is not "struct ip".
     // From <netinet/ip.h> Linux header
     // Mixed with FreeBSD #define (see <netinet/ip.h> FreeBSD header)
 
+#define BYTE_ORDER LITTLE_ENDIAN
     struct iphdr
     {
 #  if BYTE_ORDER == LITTLE_ENDIAN
@@ -38,6 +39,6 @@
         /* The options start here. */
     };
 
-#endif
+// #endif
 
 #endif // OS_NETINET_IP

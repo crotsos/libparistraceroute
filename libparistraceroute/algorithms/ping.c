@@ -5,7 +5,7 @@
 #include <stdio.h>              // fprintf
 #include <string.h>             // memset()
 #include <math.h>               // abs(), ceil()
-#include "os/netinet/ip_icmp.h" // icmpv4 constants
+#include "lwip/prot/icmp.h" // icmpv4 constants
 #include "os/netinet/icmp6.h"   // icmpv6 constants
 
 #include "../probe.h"
@@ -220,11 +220,13 @@ static bool destination_network_unreachable(const probe_t * reply) {
     ) {
         switch (version){
             case 4:
-                ret = (type == ICMP_UNREACH && code == ICMP_UNREACH_HOST);
+                ret = (type == ICMP_DUR && code == 1 /* ICMP_UNREACH_HOST */ );
                 break;
+#ifdef USE_IPV6
             case 6:
                 ret = (type == ICMP6_DST_UNREACH && code == ICMP6_DST_UNREACH_ADDR);
                 break;
+#endif
             default:
                 fprintf(stderr, "destination_network_unreachable: invalid version = %d\n", version);
                 break;
@@ -249,9 +251,11 @@ static bool destination_host_unreachable(const probe_t *reply) {
      && probe_extract(reply, "type",    &type)
     ) {
         if (version == 4) {
-            return (type == ICMP_UNREACH) && (code == ICMP_UNREACH_NET);
+            return (type == ICMP_DUR) && (code == 0);
+#ifdef USE_IPV6
         } else {
             return (type == ICMP6_DST_UNREACH) && (code == ICMP6_DST_UNREACH_NOROUTE);
+#endif
         }
     }
     return false;
@@ -272,9 +276,11 @@ static bool destination_port_unreachable(const probe_t *reply) {
         && probe_extract(reply, "type", &type)) {
 
         if (version == 4) {
-            return (type == ICMP_UNREACH) && (code == ICMP_UNREACH_PORT);
+            return (type == ICMP_DUR) && (code == 3);
+#ifdef USE_IPV6
         } else {
             return (type == ICMP6_DST_UNREACH) && (code == ICMP6_DST_UNREACH_NOPORT);
+#endif
         }
     }
     return false;
@@ -295,9 +301,11 @@ static bool destination_protocol_unreachable(const probe_t *reply) {
         && probe_extract(reply, "type", &type)) {
 
         if (version == 4) {
-            return (type == ICMP_UNREACH) && (code == ICMP_UNREACH_PROTOCOL);
+            return (type == ICMP_DUR) && (code == 2 /* ICMP_UNREACH_PROTOCOL */ );
+#ifdef USE_IPV6
         } else {
             return (type == ICMP6_PARAM_PROB) && (code == ICMP6_PARAMPROB_NEXTHEADER);
+#endif
         }
     }
     return false;
@@ -318,9 +326,11 @@ static bool ttl_exceeded(const probe_t *reply) {
         && probe_extract(reply, "type", &type)) {
 
         if (version == 4) {
-            return (type == ICMP_TIMXCEED) && (code == ICMP_TIMXCEED_INTRANS);
+            return (type == ICMP_TE) && (code == 0);
+#ifdef USE_IPV6
         } else {
             return (type == ICMP6_TIME_EXCEEDED) && (code == ICMP6_TIME_EXCEED_TRANSIT);
+#endif
         }
     }
     return false;
@@ -341,9 +351,11 @@ static bool fragment_reassembly_time_exceeded(const probe_t *reply) {
         && probe_extract(reply, "type", &type)) {
 
         if (version == 4) {
-            return (type == ICMP_TIMXCEED) && (code == ICMP_TIMXCEED_REASS);
+            return (type == ICMP_TE) && (code == 1 /* ICMP_TIMXCEED_REASS*/ );
+#ifdef USE_IPV6
         } else {
             return (type == ICMP6_TIME_EXCEEDED) && (code == ICMP6_TIME_EXCEED_REASSEMBLY);
+#endif
         }
     }
     return false;
@@ -364,9 +376,11 @@ static bool redirect(const probe_t *reply) {
         && probe_extract(reply, "type", &type)) {
 
         if (version == 4) {
-            return (type == ICMP_REDIRECT) && (code == ICMP_REDIRECT_NET);
+            return (type == ICMP_RD) && (code == 0 /* ICMP_REDIRECT_NET */ );
+#ifdef USE_IPV6
         } else {
             return (type == ND_REDIRECT);
+#endif
         }
     }
     return false;
@@ -387,10 +401,12 @@ static bool parameter_problem(const probe_t *reply) {
        && probe_extract(reply, "type", &type)) {
 
         if (version == 4) {
-            return (type == ICMP_PARAMPROB);
+            return (type == ICMP_PP);
+#ifdef USE_IPV6
         } else {
             return (type == ICMP6_PARAM_PROB ) && ((code == ICMP6_PARAMPROB_HEADER)
                 || (code == ICMP6_PARAMPROB_OPTION));
+#endif
         }
     }
     return false;

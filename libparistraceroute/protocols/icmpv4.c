@@ -7,7 +7,7 @@
 #include <stdbool.h>                // bool
 #include <errno.h>                  // ERRNO, EINVAL
 #include <stddef.h>                 // offsetof()
-#include "os/netinet/ip_icmp.h"     // ICMP_ECHO
+#include "lwip/prot/icmp.h"         // ICMP_ECHO
 #include <netinet/in.h>             // IPPROTO_ICMP = 1
 #include <arpa/inet.h>
 
@@ -33,15 +33,15 @@ static protocol_field_t icmpv4_fields[] = {
     {
         .key    = ICMPV4_FIELD_TYPE,
         .type   = TYPE_UINT8,
-        .offset = offsetof(struct icmphdr, ICMPV4_TYPE),
+        .offset = offsetof(struct icmp_echo_hdr, type),
     }, {
         .key    = ICMPV4_FIELD_CODE,
         .type   = TYPE_UINT8,
-        .offset = offsetof(struct icmphdr, ICMPV4_CODE),
+        .offset = offsetof(struct icmp_echo_hdr, code),
     }, {
         .key    = ICMPV4_FIELD_CHECKSUM,
         .type   = TYPE_UINT16,
-        .offset = offsetof(struct icmphdr, ICMPV4_CHECKSUM),
+        .offset = offsetof(struct icmp_echo_hdr, chksum),
     },
 #ifdef LINUX
     {
@@ -60,16 +60,18 @@ static protocol_field_t icmpv4_fields[] = {
  * Default ICMP values
  */
 
-static struct icmphdr icmpv4_default = {
+static struct icmp_echo_hdr icmpv4_default = {
     /*
     .type           = ICMPV4_DEFAULT_TYPE,
     .code           = ICMPV4_DEFAULT_CODE,
     .checksum       = ICMPV4_DEFAULT_CHECKSUM,
     .un.gateway     = ICMPV4_DEFAULT_BODY // XXX union type
     */
-    .ICMPV4_TYPE        = ICMPV4_DEFAULT_TYPE,
-    .ICMPV4_CODE        = ICMPV4_DEFAULT_CODE,
-    .ICMPV4_CHECKSUM    = ICMPV4_DEFAULT_CHECKSUM,
+    .type        = ICMPV4_DEFAULT_TYPE,
+    .code        = ICMPV4_DEFAULT_CODE,
+    .chksum      = ICMPV4_DEFAULT_CHECKSUM,
+    .id          = 0,
+    .seqno       = 0,
 #ifdef LINUX
     .un.gateway     = ICMPV4_DEFAULT_BODY // XXX union type
 #endif
@@ -82,7 +84,7 @@ static struct icmphdr icmpv4_default = {
  */
 
 size_t icmpv4_get_header_size(const uint8_t * icmpv4_segment) {
-    return icmpv4_segment ? sizeof(struct icmphdr) : 0;
+    return icmpv4_segment ? sizeof(struct icmp_echo_hdr) : 0;
 }
 
 /**
@@ -93,7 +95,7 @@ size_t icmpv4_get_header_size(const uint8_t * icmpv4_segment) {
  */
 
 size_t icmpv4_write_default_header(uint8_t * icmpv4_segment) {
-    size_t size = sizeof(struct icmphdr);
+    size_t size = sizeof(struct icmp_echo_hdr);
     if (icmpv4_segment) memcpy(icmpv4_segment, &icmpv4_default, size);
     return size;
 }
@@ -109,7 +111,7 @@ size_t icmpv4_write_default_header(uint8_t * icmpv4_segment) {
 
 bool icmpv4_write_checksum(uint8_t * icmpv4_segment, buffer_t * ipv4_psh)
 {
-    struct icmphdr * icmpv4_header = (struct icmphdr *) icmpv4_segment;
+    struct icmp_echo_hdr * icmpv4_header = (struct icmp_echo_hdr *) icmpv4_segment;
 
     // No pseudo header not required in ICMPv4
     if (ipv4_psh) {
@@ -118,8 +120,8 @@ bool icmpv4_write_checksum(uint8_t * icmpv4_segment, buffer_t * ipv4_psh)
     }
 
     // The ICMPv4 checksum must be set to 0 before its calculation
-    icmpv4_header->ICMPV4_CHECKSUM = 0;
-    icmpv4_header->ICMPV4_CHECKSUM = csum((uint16_t *) icmpv4_segment, sizeof(struct icmphdr));
+    icmpv4_header->chksum = 0;
+    icmpv4_header->chksum = csum((uint16_t *) icmpv4_segment, sizeof(struct icmp_echo_hdr));
     return true;
 }
 
@@ -129,8 +131,8 @@ const protocol_t * icmpv4_get_next_protocol(const layer_t * icmpv4_layer) {
 
     if (layer_extract(icmpv4_layer, "type", &icmpv4_type)) {
         switch (icmpv4_type) {
-            case ICMP_DEST_UNREACH:
-            case ICMP_TIME_EXCEEDED:
+            case ICMP_DUR:
+            case ICMP_TE:
                 next_protocol = protocol_search("ipv4");
                 break;
             default:
@@ -161,7 +163,7 @@ bool icmpv4_matches(const struct probe_s * _probe, const struct probe_s * _reply
      && probe_extract(probe, "type", &probe_type)
      && probe_extract(probe, "code", &probe_code)) {
 
-        if (reply_type == ICMP_ECHOREPLY) {
+        if (reply_type == ICMP_ER) {
             return true;
         }
 

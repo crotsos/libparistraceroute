@@ -2,6 +2,7 @@
 #define OS_NETINET_IN
 
 #include "../os.h"
+#include "lwip/inet.h"
 
 #ifdef LINUX
 #  include <netinet/in.h>

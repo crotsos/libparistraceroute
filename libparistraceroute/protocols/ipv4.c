@@ -41,6 +41,9 @@
 #define IPV4_DEFAULT_IDENTIFICATION  1
 #define IPV4_DEFAULT_FRAGOFF         0
 #define IPV4_DEFAULT_TTL             255
+#ifndef IPPROTO_IPIP
+#define IPPROTO_IPIP 4
+#endif
 #define IPV4_DEFAULT_PROTOCOL        IPPROTO_IPIP
 #define IPV4_DEFAULT_CHECKSUM        0
 #define IPV4_DEFAULT_SRC_IP          0 // See ipv4_get_default_src_ip()
